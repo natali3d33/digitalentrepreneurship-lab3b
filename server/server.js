@@ -85,6 +85,62 @@ app.post('/verify', async (req, res) => {
     }
 });
 
+// ========================================================
+// Message Board Routes
+// ========================================================
+
+// Get 20 newest messages
+app.get('/messages', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (error) throw error;
+
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching messages'
+        });
+    }
+});
+
+// Post a new message
+app.post('/messages', async (req, res) => {
+    const { name, text } = req.body;
+
+    if (!text || text.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            message: 'Message cannot be empty'
+        });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('messages')
+            .insert([{ name, text }]);
+
+        if (error) throw error;
+
+        res.json({
+            success: true,
+            data
+        });
+    } catch (error) {
+        console.error('Error posting message:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error posting message'
+        });
+    }
+});
+
 // Fallback route to serve React frontend for any unmatched routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build/index.html'));
